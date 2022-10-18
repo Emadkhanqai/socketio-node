@@ -1,4 +1,5 @@
-const cors=require('cors');
+const cors = require('cors');
+const axios = require("axios");
 const app = require('express')();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
@@ -13,18 +14,23 @@ app.get('/', (req, res) => {
     res.send('<h1>Hey Socket.io</h1>');
 });
 
-io.on('connection', (socket) => {
+io.on("connection", socket => {
 
-    console.log('a user connected');
-
-    socket.on('disconnect', () => {
-        console.log('user disconnected');
+    socket.on("getDoc", userId => {
+        getApiAndEmit(io, userId);
     });
 
-    socket.on('getUnitStatus', (msg) => {
-        io.emit('receiveMessage', `server: ${msg}`);
-    });
+    socket.on("disconnect", () => console.log("Client disconnected"));
 });
+
+const getApiAndEmit = async (io, userId) => {
+    try {
+        const res = await axios.get(`https://jsonplaceholder.typicode.com/posts?userId=${userId}`);
+        io.emit("document", res.data);
+    } catch (error) {
+        console.error(`Error: ${error}`);
+    }
+};
 
 http.listen(3000, () => {
     console.log('listening on *:3000');
